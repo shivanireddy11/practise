@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="c40c1196-f0d4-4673-a1c5-1e41ddb24e4b" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="8b5a2ffa-a65e-431f-87f2-d979cb51e11b" >
+		<http:request-connection host="worldtimeapi.org" />
+	</http:request-config>
+	<flow name="session-6Flow" doc:id="76b11307-d375-481a-a52f-7e37e100aaf3" >
+		<http:listener doc:name="Listener" doc:id="17734851-0275-411d-88eb-766f75eae583" config-ref="HTTP_Listener_config" path="/test"/>
+		<set-payload value='#["london"]' doc:name="Set Payload" doc:id="52441c69-7a1b-4bc2-be39-7e0e0fd15dea" />
+		<scatter-gather doc:name="Scatter-Gather" doc:id="69de1985-c9a8-40c2-87be-ce8959354fe1" >
+			<route >
+				<ee:transform doc:name="Transform Message" doc:id="6764214c-6e65-41aa-8624-03a40af4a175" >
+					<ee:message >
+						<ee:set-payload ><![CDATA["first target as london"]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</route>
+			<route >
+				<ee:transform doc:name="Transform Message" doc:id="fea4237d-cf5a-48c3-a15f-1738795c3e50" >
+					<ee:message >
+						<ee:set-payload ><![CDATA["second target as london"]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</route>
+			<route>
+				<try doc:name="Try" doc:id="ac98d3ca-f778-471e-ba7c-afc91205eb0c" >
+					<ee:transform doc:name="Transform Message" doc:id="67a6116c-6fb0-4926-983c-1ec55eee61db">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+10/0]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+					<error-handler >
+						<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="6fb4f86e-967c-45e6-958b-d98a7b70e9d4" >
+							<logger level="INFO" doc:name="Logger" doc:id="9adcb209-4b2e-445d-ae9f-89ccb5a427ba" message='#["continue"]'/>
+						</on-error-continue>
+					</error-handler>
+				</try>
+			</route>
+		</scatter-gather>
+		<ee:transform doc:name="Transform Message" doc:id="bd686af9-6303-44ac-bc68-8f3fb2c5accc" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload[0].payload ++ "-" ++ payload[1].payload ++ "-" ++ payload[2].payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>

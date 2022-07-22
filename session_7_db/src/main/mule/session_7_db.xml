@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="5d4f6761-b711-46de-91ae-592650b00f64" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="3a30c31d-81b7-45ec-bcdc-becedc6d1ce5" >
+		<db:my-sql-connection host="localhost" port="3306" user="root" password="root" database="likki_db" />
+	</db:config>
+	<file:config name="File_Config" doc:name="File Config" doc:id="de33c8a6-e5ae-4b4f-9143-4294f8c3746c" />
+	<flow name="session_7_dbFlow" doc:id="febd6cc6-9008-4b41-a9aa-aa428ea6341b" >
+		<http:listener doc:name="Listener" doc:id="a2d105b8-8435-49f0-b02b-d7b5ef88c68e" config-ref="HTTP_Listener_config" path="/db"/>
+		<logger level="INFO" doc:name="Logger" doc:id="b8ebbe0f-7f8c-4af1-b33c-b186c7dcfdbe" message='#["start my likki_db"]'/>
+		<db:select doc:name="Select" doc:id="f55fb2ff-2992-4360-9cc6-2e7c73d52859" config-ref="Database_Config">
+			<db:sql ><![CDATA[SELECT * FROM likki_db.emp where LastName =:Name]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	Name: attributes.queryParams.LastName
+}]]]></db:input-parameters>
+		</db:select>
+		<choice doc:name="Choice" doc:id="9d6cefed-4eaa-424c-8644-3fc7ffb332ff" >
+			<when expression="sizeOf(payload) &gt;0">
+				<ee:transform doc:name="Transform Message" doc:id="cf3ecf24-1d70-4294-9f4f-c44d7e228429">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+				<file:write doc:name="Write" doc:id="9fef422f-60a2-4650-a2d0-1bc1781c9f31" config-ref="File_Config" path="C:\Users\lchin\Desktop\Target\new\output\Sravan reddy" mode="APPEND"/>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Transform Message" doc:id="00090e5f-573e-4ea3-b604-23d6ad9caec0">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "results not found"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+			</otherwise>
+		</choice>
+		<logger level="INFO" doc:name="Logger" doc:id="cf7042ec-2960-4501-9da1-8ad3ecac98a0" message='#["succesfully ended"]'/>
+	</flow>
+</mule>
